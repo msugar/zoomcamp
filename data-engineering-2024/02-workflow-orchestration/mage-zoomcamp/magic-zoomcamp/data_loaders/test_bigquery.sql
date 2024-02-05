@@ -1,0 +1,1 @@
+SELECT CURRENT_DATE() as today;
