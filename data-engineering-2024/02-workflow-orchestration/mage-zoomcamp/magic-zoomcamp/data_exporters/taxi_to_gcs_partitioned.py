@@ -8,7 +8,6 @@ if 'data_exporter' not in globals():
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/home/src/personal-gcp.json'
 
 bucket_name = 'mage-zoomcamp-msugar'
-project_id = 'dtc-de-course-411320'
 
 table_name = 'nyc_taxi_data'
 
