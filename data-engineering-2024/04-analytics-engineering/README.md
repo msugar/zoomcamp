@@ -17,7 +17,7 @@
     select * from `bigquery-public-data.new_york_taxi_trips.tlc_yellow_trips_2019`;
     ```
 
-3. Append the 2020 data:
+4. Append the 2020 data:
     ```
     insert into `trips_data_all.green_tripdata`
     select * from `bigquery-public-data.new_york_taxi_trips.tlc_green_trips_2020`;
@@ -26,7 +26,7 @@
     select * from `bigquery-public-data.new_york_taxi_trips.tlc_yellow_trips_2020`;
     ```
 
-4. Alter the tables to conform to the expected structure
+5. Alter the tables to conform to the expected structure
     ```
     -- When you run the query, only run at most 5 of the ALTER TABLE statements at one time (by highlighting only 5 or less). 
     -- Otherwise BigQuery will say too many alterations to the table are being made.
@@ -63,3 +63,12 @@
     ALTER TABLE `trips_data_all.green_tripdata`
     RENAME COLUMN dropoff_location_id TO DOLocationID;
     ```
+
+6. Copy the [For-hire vehicles (FHV)](https://github.com/DataTalksClub/nyc-tlc-data/releases/tag/fhv)files (CSV format, gnuzipped) to an ingestion GCS bucket
+
+7. Using bq, create the `fhv_tripdata_all` table:  [fhv_tripdata.bq.sh](fhv_tripdata.bq.sh) 
+
+8. Note the CSV files have this header:
+```dispatching_base_num,pickup_datetime,dropOff_datetime,PUlocationID,DOlocationID,SR_Flag,Affiliated_base_number```
+
+    But since we're using a table definition file, we can name the columns whatever we like to conform to the same naming used for the green and yellow tripdata tables.
