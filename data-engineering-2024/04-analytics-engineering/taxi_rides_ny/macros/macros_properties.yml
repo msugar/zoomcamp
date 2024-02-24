@@ -10,3 +10,14 @@ macros:
         description: >
           payment_type value.
           Must be one of the accepted values, otherwise the macro will return null
+
+  - name: safe_cast_to_int64
+    description: |
+      This macro safely casts a string column to a float64 type and then to an int64 type. It's useful for converting numeric string representations to integer values while handling potential casting errors gracefully.
+      In BigQuery, just using safe_cast(str as INT64) will give a null result if str = '1.0', for example.
+    docs:
+      show: true
+    arguments:
+      - name: column_name
+        type: string
+        description: The name of the column to be cast from string to float64 and then to int64.
