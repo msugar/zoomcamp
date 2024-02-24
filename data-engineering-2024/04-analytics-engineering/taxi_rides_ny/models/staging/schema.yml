@@ -200,6 +200,9 @@ models:
       - name: tripid
         data_type: string
         description: ""
+        tests:
+          - not_null:
+              severity: warn
 
       - name: dispatching_base_num
         data_type: string
