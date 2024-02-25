@@ -4,7 +4,7 @@
 
 {% macro get_payment_type_description(payment_type) -%}
 
-    case {{ safe_cast_to_int64("payment_type") }}  
+    case {{ safe_cast_to_int("payment_type") }}  
         when 1 then 'Credit card'
         when 2 then 'Cash'
         when 3 then 'No charge'
