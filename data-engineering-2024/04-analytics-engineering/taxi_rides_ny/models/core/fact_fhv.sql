@@ -1,7 +1,7 @@
 {{ config(materialized="table") }}
 
 with
-    fhv_tripdata as (
+    fhv_tripdata as ( 
         select *, 'FHV' as service_type from {{ ref("stg_fhv_tripdata") }} 
     ),
     dim_zones as (select * from {{ ref("dim_zones") }} where borough != 'Unknown')
