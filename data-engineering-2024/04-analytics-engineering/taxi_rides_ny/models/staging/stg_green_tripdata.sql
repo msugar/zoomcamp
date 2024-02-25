@@ -39,7 +39,7 @@ select
     cast(improvement_surcharge as numeric) as improvement_surcharge,
     cast(total_amount as numeric) as total_amount,
     coalesce(
-        {{ safe_cast_to_int64("payment_type") }}, 0
+        {{ safe_cast_to_int("payment_type") }}, 0 
     ) as payment_type,
     {{ get_payment_type_description("payment_type") }} as payment_type_description
 from tripdata
