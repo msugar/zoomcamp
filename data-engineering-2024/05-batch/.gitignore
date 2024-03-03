@@ -1,0 +1,10 @@
+# data files
+/*.csv.gz
+/*.csv
+
+# output folders
+q0?_output/
+zones/
+
+# Python Virtual Environment
+venv/
