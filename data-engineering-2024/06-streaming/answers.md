@@ -1,12 +1,12 @@
 # Week 6 Homework Answers
 
 ## Setup
- - Follow the homework instructions. 
- - Download the test data file:
+ In addition to following the homework instructions: 
+ - To download the test data file:
     ```
     wget https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2019-10.csv.gz
     ```
- - Create a virtual environment with the required dependencies:
+ - To create a virtual environment with the required dependencies:
     ```
     python3 -m venv .venv
     source .venv/bin/activate
@@ -120,7 +120,7 @@
         ```
         Row(lpep_pickup_datetime='2019-10-04 17:57:52', lpep_dropoff_datetime='2019-10-04 18:10:24', PULocationID=185, DOLocationID=51, passenger_count=1.0, trip_distance=3.28, tip_amount=0.0)
         ```
-        
+
 ## Question 7 - Most popular destination
 - Answer
     ```
