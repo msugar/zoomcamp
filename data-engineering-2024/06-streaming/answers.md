@@ -1,22 +1,70 @@
 # Week 6 Homework Answers
 
 ## Setup
- In addition to following the homework instructions: 
- - To download the test data file:
-    ```
+In addition to following the [homework instructions](homework.md): 
+
+- To download the test data file:
+    ```console
     wget https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2019-10.csv.gz
     ```
- - To create a virtual environment with the required dependencies:
-    ```
+
+- To create a virtual environment with the required dependencies for the `q0n.py` programs:
+    ```console
     python3 -m venv .venv
     source .venv/bin/activate
 
     pip install -r requirements.txt
     ```
- 
+
+- To instal SDKMAN: https://sdkman.io/install
+
+- To instal Java using SDKMAN (Spark runs on Java 8/11/17, and I decided to go with Java Temurin 11.0.22 as of 2024-04-08):
+    ```console
+    sdk instal java 11.0.22-tem
+    ```
+
+- To install Spark with SDKMAN (Spark 3.5.0 is latest version as of 2024-04-08): 
+    ```console
+    sdk install spark 3.5.0
+    ```
+
+- To make sure you have the proper environment variables set by SDKMAN for each installation:
+    ```console
+    source ~/.bashrc
+    ```
+    Or, alternatively, just open a new command-line terminal.
+
+- To verify the Java installation:
+    ```console
+    which java
+    java -version
+    ```
+
+- To verify the Spark installation:
+    ```console
+    echo $SPARK_HOME
+    which spark-shell
+    which pyspark
+    which spark-submit
+
+    EXAMPLES_JAR=$(realpath `find ${SPARK_HOME}/ -type f -iname spark-examples*.jar`)
+    spark-submit --name spark-pi --class org.apache.spark.examples.SparkPi local://${EXAMPLES_JAR}
+    ```
+    For the last command, you should see a non-logging message that looks like "Pi is roughly" followed by a number.
+
+- To run `pyspark` with the required packages so it can consume reacords from Kafka or Redpanda:
+    ```console
+    pyspark --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0,org.apache.spark:spark-streaming_2.12:3.5.0
+    ```
+
+- Don't forget to start Redpanda!
+    ```console
+    docker-compose up -d
+    ```
+
 ## Question 1 - Redpanda version
 - Commands
-    ```
+    ```console
     alias rpk="docker exec -ti redpanda-1 rpk"
     rpk version
     ```
@@ -27,7 +75,7 @@
 
 ## Question 2 - Creating a topic
 - Command
-    ```
+    ```console
     rpk topic create test-topic --partitions 2
     ```
 - Answer
@@ -37,21 +85,18 @@
     ```
 
 ## Question 3 - Connecting to the Kafka server
-- Commands
-    ```
-    python3 -m venv .venv
-    source .venv/bin/activate
-    pip install kafka-python
-
+- Command
+    ```console
     python q03.py
     ```
 - Answer
     ```
     True
     ```
+
 ## Question 4 - Sending data to the stream
 - Command
-    ```
+    ```console
     python q04.py
     ```
 - Answer
@@ -69,9 +114,12 @@
     took 0.53 seconds
     ```
     Out of that, because of the `sleep()` function calls, at least 0.50 seconds were spent sending the messages.
+
 ## Question 5 - Sending the Trip Data
 - Command
-    ```
+    ```console
+    rpk topic create green-trips
+
     python q05.py
     ```
 - Answer
@@ -80,48 +128,77 @@
     ```
 
 ## Question 6 - Parsing the data
-- Command
+- Submit `q06a.before_parsing.py` to Spark with the required packages:
+    ```console
+    spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0,org.apache.spark:spark-streaming_2.12:3.5.0 q06a.before_parsing.py
     ```
-    # Spin up an environment with Docker containers for the Spark Master, Spark Worker, and Repanda
-    docker-compose -f docker-compose.spark.yml up --detach
 
-    # Remote into the Spark master node
-    SPARK_MASTER_CONTAINER=$(docker ps --format "{{.Names}}" | grep master)
-    docker exec -i -t $SPARK_MASTER_CONTAINER /bin/bash
+- The last lines should look like this:
+    ```
+    ==============================
+    First row without parsing: Row(key=None, value=bytearray(b'{"lpep_pickup_datetime": "2019-10-01 00:26:02", "lpep_dropoff_datetime": "2019-10-01 00:39:58", "PULocationID": 112, "DOLocationID": 196, "passenger_count": 1, "trip_distance": 5.88, "tip_amount": 0.0}'), topic='green-trips', partition=0, offset=0, timestamp=datetime.datetime(2024, 4, 8, 14, 5, 55, 65000), timestampType=0)
+    ==============================
+    ```
 
-    # Test Spark is working
-    EXAMPLES_JAR=$(realpath `find . -type f -iname spark-examples*.jar`)
-    ./bin/spark-submit --master spark://spark-master:7077 --name spark-pi --class org.apache.spark.examples.SparkPi local://${EXAMPLES_JAR}
-    # You should see a non-logging message that starts with "Pi is roughly" and a number.
+- Now submit `q06b.after_parsing.py`:
+    ```console
+    spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0,org.apache.spark:spark-streaming_2.12:3.5.0 q06b.after_parsing.py
+    ```
 
-    # Make sure you can see the files outside the container
-    ls -la /mounted-data/*.py
+- This time, the last lines should look like this:
+    ```
+    ==============================
+    First row with parsing: Row(lpep_pickup_datetime='2019-10-01 00:26:02', lpep_dropoff_datetime='2019-10-01 00:39:58', PULocationID=112, DOLocationID=196, passenger_count=1.0, trip_distance=5.88, tip_amount=0.0)
+    ==============================
+    ```
 
-    # Shutdown the Spark cluster
-    docker-compose -f docker-compose.spark.yml down
-    ```
-- Troubleshooting
-
-    If you get the following error when you run `pyspark`:
-    ```
-    Error: pyspark does not support any application options.
-    ```
-    use this [workaround](https://github.com/bitnami/containers/issues/38139):
-    ```
-    sed -i '$ d' bin/pyspark
-    echo 'exec "${SPARK_HOME}"/bin/spark-submit pyspark-shell-main "$@"' >> bin/pyspark
-    ```
 - Answer
     - Before parsing:
         ```
-        Row(key=None, value=bytearray(b'{"lpep_pickup_datetime":"2019-10-06 10:34:04","lpep_dropoff_datetime":"2019-10-06 10:41:03","PULocationID":97,"DOLocationID":33,"passenger_count":1,"trip_distance":1.31,"tip_amount":1.0}'), topic='green-trips', partition=0, offset=794036, timestamp=datetime.datetime(2024, 3, 25, 15, 30, 20, 461000), timestampType=0)
+        Row(key=None, value=bytearray(b'{"lpep_pickup_datetime": "2019-10-01 00:26:02", "lpep_dropoff_datetime": "2019-10-01 00:39:58", "PULocationID": 112, "DOLocationID": 196, "passenger_count": 1, "trip_distance": 5.88, "tip_amount": 0.0}'), topic='green-trips', partition=0, offset=0, timestamp=datetime.datetime(2024, 4, 8, 14, 5, 55, 65000), timestampType=0)
         ```
     - Afer parsing:
         ```
-        Row(lpep_pickup_datetime='2019-10-04 17:57:52', lpep_dropoff_datetime='2019-10-04 18:10:24', PULocationID=185, DOLocationID=51, passenger_count=1.0, trip_distance=3.28, tip_amount=0.0)
+        Row(lpep_pickup_datetime='2019-10-01 00:26:02', lpep_dropoff_datetime='2019-10-01 00:39:58', PULocationID=112, DOLocationID=196, passenger_count=1.0, trip_distance=5.88, tip_amount=0.0)
         ```
 
 ## Question 7 - Most popular destination
+- Command
+    ```console
+    spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0,org.apache.spark:spark-streaming_2.12:3.5.0 q07.py
+    ```
+    The results should look like this:
+    ```
+    -------------------------------------------
+    Batch: 0
+    -------------------------------------------
+    +------------------------------------------+------------+-----+
+    |window                                    |DOLocationID|count|
+    +------------------------------------------+------------+-----+
+    |{2024-04-08 14:40:00, 2024-04-08 14:45:00}|74          |17741|
+    |{2024-04-08 14:40:00, 2024-04-08 14:45:00}|42          |15942|
+    |{2024-04-08 14:40:00, 2024-04-08 14:45:00}|41          |14061|
+    |{2024-04-08 14:40:00, 2024-04-08 14:45:00}|75          |12840|
+    |{2024-04-08 14:40:00, 2024-04-08 14:45:00}|129         |11930|
+    |{2024-04-08 14:40:00, 2024-04-08 14:45:00}|7           |11533|
+    |{2024-04-08 14:40:00, 2024-04-08 14:45:00}|166         |10845|
+    |{2024-04-08 14:40:00, 2024-04-08 14:45:00}|236         |7913 |
+    |{2024-04-08 14:40:00, 2024-04-08 14:45:00}|223         |7542 |
+    |{2024-04-08 14:40:00, 2024-04-08 14:45:00}|238         |7318 |
+    |{2024-04-08 14:40:00, 2024-04-08 14:45:00}|82          |7292 |
+    |{2024-04-08 14:40:00, 2024-04-08 14:45:00}|181         |7282 |
+    |{2024-04-08 14:40:00, 2024-04-08 14:45:00}|95          |7244 |
+    |{2024-04-08 14:40:00, 2024-04-08 14:45:00}|244         |6733 |
+    |{2024-04-08 14:40:00, 2024-04-08 14:45:00}|61          |6606 |
+    |{2024-04-08 14:40:00, 2024-04-08 14:45:00}|116         |6339 |
+    |{2024-04-08 14:40:00, 2024-04-08 14:45:00}|138         |6144 |
+    |{2024-04-08 14:40:00, 2024-04-08 14:45:00}|97          |6050 |
+    |{2024-04-08 14:40:00, 2024-04-08 14:45:00}|49          |5221 |
+    |{2024-04-08 14:40:00, 2024-04-08 14:45:00}|151         |5153 |
+    +------------------------------------------+------------+-----+
+    only showing top 20 rows    
+    ```
+
 - Answer
     ```
     The most popular destination was the one with `DOLocationID=74` 

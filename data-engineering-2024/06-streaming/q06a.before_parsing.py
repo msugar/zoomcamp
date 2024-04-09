@@ -1,3 +1,5 @@
+import time
+
 import pyspark
 from pyspark.sql import SparkSession
 
@@ -11,6 +13,8 @@ spark = SparkSession \
     .config("spark.jars.packages", kafka_jar_package) \
     .getOrCreate()
     
+spark.sparkContext.setLogLevel("WARN")
+    
 green_stream = spark \
     .readStream \
     .format("kafka") \
@@ -18,13 +22,16 @@ green_stream = spark \
     .option("subscribe", "green-trips") \
     .option("startingOffsets", "earliest") \
     .load()
-    
+
 def peek(mini_batch, batch_id):
     first_row = mini_batch.take(1)
-
     if first_row:
-        print(first_row[0])
+        print('=' * 30)
+        print(f"First row without parsing: {first_row[0]}")
+        print('=' * 30)
 
 query = green_stream.writeStream.foreachBatch(peek).start()
+
+time.sleep(10)
 
 query.stop()

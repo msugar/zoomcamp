@@ -34,9 +34,9 @@ services:
       - 29092:29092
     
     # Added network to enable communication with other services running in another docker compose
-    networks:
-      - my_network
+#    networks:
+#      - my_network
 
-networks:
-  my_network:
-    driver: bridge
+#networks:
+#  my_network:
+#    driver: bridge
